@@ -29,13 +29,19 @@ const Register = () => {
         }
 
         try {
-            await axios.post('/api/auth/register', {
+            const response = await apiRegister({
                 username: registerData.username,
                 email: registerData.email,
                 password: registerData.password
             });
-            // Sau khi đăng ký thành công, chuyển về trang đăng nhập
-            navigate('/login');
+            
+            if (response.data.err === 0) {
+                localStorage.setItem('token', response.data.token);
+                localStorage.setItem('user', JSON.stringify(response.data.user));
+                navigate('/login');
+            } else {
+                setError(response.data.message);
+            }
         } catch (err) {
             setError(err.response?.data?.message || 'Đăng ký thất bại');
         } finally {

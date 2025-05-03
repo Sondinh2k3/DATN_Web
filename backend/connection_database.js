@@ -1,19 +1,23 @@
-const { Sequelize } = require('sequelize');
+import { Sequelize } from 'sequelize';
+import 'dotenv/config';
 
 // Option 3: Passing parameters separately (other dialects)
-const sequelize = new Sequelize('datn', 'root', null, {
-  host: 'localhost',
-  dialect: 'mysql',
-  logging: false
-});
+const sequelize = new Sequelize(
+    process.env.DB_NAME || 'datn',
+    process.env.DB_USER || 'root',
+    process.env.DB_PASS || null,
+    {
+        host: process.env.DB_HOST || 'localhost',
+        dialect: 'mysql',
+        logging: false
+    }
+);
 
-const connection_Database = async () => {
+export const connection = async () => {
     try {
         await sequelize.authenticate();
         console.log('Connection has been established successfully.');
-      } catch (error) {
+    } catch (error) {
         console.error('Unable to connect to the database:', error);
-      }
+    }
 }
-
-connection_Database();

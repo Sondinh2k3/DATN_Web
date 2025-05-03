@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
+import { apiLogin } from '../../services/auth';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -20,9 +20,15 @@ const Login = () => {
         setError('');
         
         try {
-            const response = await axios.post('/api/auth/login', loginData);
-            localStorage.setItem('token', response.data.token);
-            navigate('/dashboard');
+            const response = await apiLogin(loginData);
+            
+            if (response.data.err === 0) {
+                localStorage.setItem('token', response.data.token);
+                localStorage.setItem('user', JSON.stringify(response.data.user));
+                navigate('/dashboard');
+            } else {
+                setError(response.data.message);
+            }
         } catch (err) {
             setError(err.response?.data?.message || 'Đăng nhập thất bại');
         } finally {

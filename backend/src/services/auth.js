@@ -5,24 +5,50 @@ import { raw } from 'mysql2';
 
 require('dotenv').config();
 
-const hashPassword = password => bcrypt.hashSync(password, bcrypt.genSaltSync(8));
+const hashPassword = (password) => {
+    const salt = bcrypt.genSaltSync(10);
+    return bcrypt.hashSync(password, salt);
+}
 
-export const register = ({email, password}) => new Promise(async (resolve, reject) => {
+export const register = ({username, email, password}) => new Promise(async (resolve, reject) => {
     try {
         const response = await db.User.findOrCreate({
             where: { email },
             defaults: {
+                username,
                 email,
                 password: hashPassword(password),
+                role: 'R3'
             },
-          });
+        });
 
-          const tocken = response[1] ? jwt.sign({ id: response[0].id, email: response[0].email, role_code: response[0].role_code }, process.env.JWT_SECRET, { expiresIn: '5d' }) : null;
+        if (!response[1]) {
+            return resolve({
+                err: 1,
+                message: 'Email already exists',
+                token: null,
+                user: null
+            });
+        }
+
+        const user = response[0].get({ plain: true });
+        delete user.password;
+
+        const token = jwt.sign(
+            { 
+                id: user.id, 
+                email: user.email, 
+                role: user.role 
+            }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: '5d' }
+        );
 
         resolve({
-            err: response[1] ? 0 : 1,
-            mes: response[1] ? 'Create user success' : 'Email already exists',
-            'access_token': `Bearer ${tocken}`
+            err: 0,
+            message: 'Create user success',
+            token: `Bearer ${token}`,
+            user
         });
     } catch (error) {
         reject(error);
@@ -35,8 +61,9 @@ export const login = ({email, password}) => new Promise(async (resolve, reject) 
         if (!email || !password) {
             return resolve({
                 err: 1,
-                mes: 'Missing email or password',
-                access_token: null
+                message: 'Missing email or password',
+                token: null,
+                user: null
             });
         }
 
@@ -50,8 +77,9 @@ export const login = ({email, password}) => new Promise(async (resolve, reject) 
         if (!user) {
             return resolve({
                 err: 1,
-                mes: 'Email not found',
-                access_token: null
+                message: 'Email not found',
+                token: null,
+                user: null
             });
         }
 
@@ -61,8 +89,9 @@ export const login = ({email, password}) => new Promise(async (resolve, reject) 
         if (!isPasswordValid) {
             return resolve({
                 err: 1,
-                mes: 'Password is incorrect',
-                access_token: null
+                message: 'Password is incorrect',
+                token: null,
+                user: null
             });
         }
 
@@ -77,10 +106,14 @@ export const login = ({email, password}) => new Promise(async (resolve, reject) 
             { expiresIn: '5d' }
         );
 
+        // Remove password from user object
+        const { password: _, ...userWithoutPassword } = user;
+
         resolve({
             err: 0,
-            mes: 'Login success',
-            access_token: `Bearer ${token}`
+            message: 'Login success',
+            token: `Bearer ${token}`,
+            user: userWithoutPassword
         });
     } catch (error) {
         console.error('Login error:', error);
