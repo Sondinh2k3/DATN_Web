@@ -3,7 +3,7 @@ import store from './redux/store';
 import { logout } from './redux/action/authActions';
 
 const axiosInstance = axios.create({
-    baseURL: process.env.REACT_APP_SERVER_URL || 'http://localhost:5000',
+    baseURL: process.env.REACT_APP_SERVER_URL || 'http://localhost:3001/api',
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json',
@@ -15,7 +15,7 @@ axiosInstance.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
         if (token) {
-            config.headers.Authorization = token;
+            config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
     },

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { apiLogin } from '../../services/auth';
 
 const Login = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     
@@ -21,15 +22,15 @@ const Login = () => {
         
         try {
             const response = await apiLogin(loginData);
-            
-            if (response.data.err === 0) {
-                localStorage.setItem('token', response.data.token);
-                localStorage.setItem('user', JSON.stringify(response.data.user));
-                navigate('/dashboard');
+            if (response.err === 0) {
+                // Lấy vị trí cần chuyển hướng từ state hoặc mặc định là dashboard
+                const from = location.state?.from?.pathname || '/dashboard';
+                navigate(from, { replace: true });
             } else {
-                setError(response.data.message);
+                setError(response.message || 'Đăng nhập thất bại');
             }
         } catch (err) {
+            console.error('Login error:', err);
             setError(err.response?.data?.message || 'Đăng nhập thất bại');
         } finally {
             setLoading(false);
@@ -102,69 +103,60 @@ const Login = () => {
 const styles = {
     container: {
         maxWidth: '400px',
-        margin: '50px auto',
-        padding: '20px',
-        borderRadius: '8px',
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+        margin: '0 auto',
+        padding: '2rem',
         backgroundColor: '#fff',
-        textAlign: 'center',
+        borderRadius: '8px',
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
     },
     title: {
-        fontSize: '24px',
-        marginBottom: '20px',
+        textAlign: 'center',
+        marginBottom: '2rem',
         color: '#333',
     },
     form: {
         display: 'flex',
         flexDirection: 'column',
-        gap: '15px',
+        gap: '1rem',
     },
     inputGroup: {
-        textAlign: 'left',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.5rem',
     },
     label: {
-        fontSize: '14px',
-        marginBottom: '5px',
-        color: '#555',
-        display: 'block',
+        fontSize: '0.9rem',
+        color: '#666',
     },
     input: {
-        width: '100%',
-        padding: '10px',
-        fontSize: '16px',
+        padding: '0.5rem',
         border: '1px solid #ddd',
         borderRadius: '4px',
-        outline: 'none',
-        boxSizing: 'border-box',
+        fontSize: '1rem',
     },
     button: {
-        padding: '10px',
-        fontSize: '16px',
-        color: '#fff',
+        padding: '0.75rem',
         backgroundColor: '#007bff',
+        color: '#fff',
         border: 'none',
         borderRadius: '4px',
         cursor: 'pointer',
-        transition: 'background-color 0.2s',
+        fontSize: '1rem',
+        marginTop: '1rem',
+    },
+    error: {
+        color: '#dc3545',
+        marginBottom: '1rem',
+        textAlign: 'center',
+    },
+    footerText: {
+        textAlign: 'center',
+        marginTop: '1rem',
+        color: '#666',
     },
     switchButton: {
         color: '#007bff',
         textDecoration: 'none',
-        cursor: 'pointer',
-        fontSize: '14px',
-    },
-    footerText: {
-        marginTop: '15px',
-        fontSize: '14px',
-        color: '#666',
-    },
-    error: {
-        color: '#dc3545',
-        backgroundColor: '#f8d7da',
-        padding: '10px',
-        borderRadius: '4px',
-        marginBottom: '15px',
-        fontSize: '14px',
     },
 };
 
