@@ -2,7 +2,7 @@ import { Sequelize } from 'sequelize';
 import 'dotenv/config';
 
 // Option 3: Passing parameters separately (other dialects)
-const sequelize = new Sequelize(
+export const sequelize = new Sequelize(
     process.env.DB_NAME || 'datn',
     process.env.DB_USER || 'root',
     process.env.DB_PASS || null,

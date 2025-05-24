@@ -13,6 +13,7 @@ import {
   Legend,
 } from 'chart.js';
 import L from 'leaflet';
+import axios from 'axios';
 
 // Đăng ký thành phần cho Chart.js
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
@@ -57,39 +58,48 @@ const Dashboard = () => {
   });
   const mapRef = useRef();
 
-  useEffect(() => {
-    const mockData = () => {
-      const now = new Date();
-      const mock = Array.from({ length: 10 }, (_, i) => ({
-        time: new Date(now - i * 5000).toLocaleTimeString(),
-        lat: 21.0285 + Math.random() * 0.001,
-        lon: 105.8542 + Math.random() * 0.001,
-        water: 50 + Math.random() * 10,
-      }));
-      const latest = mock[0];
-      setPosition([latest.lat, latest.lon]);
+  const fetchData = async () => {
+    try {
+      // Fetch latest position and water level data
+      const latestResponse = await axios.get('http://localhost:5000/api/measurements/latest');
+      const latestData = latestResponse.data;
+
+      // Update position
+      setPosition([latestData.latitude, latestData.longitude]);
+
+      // Fetch historical water level data for the chart
+      const historyResponse = await axios.get('http://localhost:5000/api/measurements/history');
+      const historyData = historyResponse.data;
+
+      // Update water level chart data
       setWaterData({
-        labels: mock.map((d) => d.time).reverse(),
+        labels: historyData.map(d => new Date(d.timestamp).toLocaleTimeString()),
         datasets: [
           {
             label: 'Mực nước (cm)',
-            data: mock.map((d) => d.water).reverse(),
+            data: historyData.map(d => d.water_level),
             borderColor: 'rgb(75, 192, 192)',
             tension: 0.1,
             fill: false,
           },
         ],
       });
-      setStatus({
-        base: 'OK',
-        rover: 'RTK Fixed',
-        gateway: 'Online',
-        lastUpdate: now.toLocaleTimeString(),
-      });
-    };
 
-    mockData();
-    const interval = setInterval(mockData, 5000);
+      // Update status
+      setStatus({
+        base: latestData.base_status,
+        rover: latestData.rover_status,
+        gateway: latestData.gateway_status,
+        lastUpdate: new Date(latestData.timestamp).toLocaleTimeString(),
+      });
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchData(); // Initial fetch
+    const interval = setInterval(fetchData, 5000); // Fetch every 5 seconds
     return () => clearInterval(interval);
   }, []);
 
